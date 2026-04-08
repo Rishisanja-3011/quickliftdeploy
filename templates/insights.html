@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights - QuickLift</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .section-title { font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--color-primary);margin:0 0 16px;display:flex;align-items:center;gap:10px; }
+        .ride-card { background:rgba(255,255,255,0.04);border:1px solid var(--color-glass-border);border-radius:16px;padding:20px 24px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:border-color 0.2s; }
+        .ride-card:hover { border-color:rgba(0,242,254,0.3); }
+        .ride-route { font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:10px; }
+        .ride-meta { display:flex;gap:16px;flex-wrap:wrap; }
+        .ride-meta span { font-size:0.8rem;color:var(--color-text-secondary);font-weight:500; }
+        .ride-meta span i { color:var(--color-primary);margin-right:4px; }
+        .card-actions { display:flex;gap:10px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end; }
+        .btn-track { background:rgba(0,242,254,0.12);color:var(--color-primary);border:1px solid rgba(0,242,254,0.25);border-radius:10px;padding:8px 16px;font-size:0.82rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s; }
+        .btn-track:hover { background:rgba(0,242,254,0.22); }
+        .btn-passengers { background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);border-radius:10px;padding:8px 16px;font-size:0.82rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s; }
+        .btn-passengers:hover { background:rgba(139,92,246,0.22); }
+        .btn-danger { background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:8px 16px;font-size:0.82rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;font-family:inherit; }
+        .btn-danger:hover { background:rgba(239,68,68,0.22); }
+        .price-tag { font-size:1.3rem;font-weight:900;color:#fff;white-space:nowrap; }
+        .empty-section { text-align:center;padding:40px 20px;color:var(--color-text-muted);border:1px dashed var(--color-glass-border);border-radius:16px;margin-bottom:14px; }
+        .empty-section i { font-size:2rem;margin-bottom:10px;display:block; }
+        .seats-badge { background:rgba(0,242,254,0.1);color:var(--color-primary);border-radius:20px;padding:3px 10px;font-size:0.75rem;font-weight:700; }
+        .passenger-badge { background:rgba(139,92,246,0.15);color:#a78bfa;border-radius:20px;padding:3px 10px;font-size:0.75rem;font-weight:700; }
+        .count-badge { background:rgba(0,242,254,0.1);color:var(--color-primary);border-radius:20px;padding:2px 10px;font-size:0.75rem;font-weight:700; }
+        .modal-backdrop { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center; }
+        .modal-backdrop.active { display:flex; }
+        .modal-box { background:#0f172a;border:1px solid var(--color-glass-border);border-radius:20px;padding:36px;max-width:420px;width:90%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.5); }
+        .modal-icon { font-size:2.5rem;margin-bottom:16px; }
+        .modal-title { font-size:1.2rem;font-weight:800;color:#fff;margin-bottom:8px; }
+        .modal-desc { font-size:0.9rem;color:var(--color-text-secondary);margin-bottom:28px;line-height:1.6; }
+        .modal-actions { display:flex;gap:12px;justify-content:center; }
+        .btn-modal-keep { background:rgba(255,255,255,0.07);color:#fff;border:1px solid var(--color-glass-border);border-radius:10px;padding:12px 24px;font-weight:700;cursor:pointer;font-size:0.9rem;font-family:inherit; }
+        .btn-modal-confirm { background:#ef4444;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-weight:700;cursor:pointer;font-size:0.9rem;font-family:inherit; }
+        .btn-modal-confirm:hover { background:#dc2626; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="logo">
+                <i class="fa-solid fa-route" style="color:var(--color-primary)"></i> Quick<span>Lift</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}" class="nav-item">Dashboard</a>
+                <a href="{{ url_for('find_ride') }}" class="nav-item">Find Ride</a>
+                <a href="{{ url_for('publish') }}" class="nav-item">Publish Trip</a>
+                <a href="/insights" class="nav-item active">Insights</a>
+                <a href="/profile/{{ user['username'] }}" class="nav-item"><i class="fa-solid fa-circle-user"></i> Profile</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline" style="padding:6px 16px;font-size:0.85rem;border-color:var(--color-error);color:var(--color-error);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}{% for category, message in messages %}
+              <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}" style="margin-bottom:20px;">
+                  <i class="fa-solid fa-{{ 'circle-check' if category == 'success' else 'circle-exclamation' }}"></i> {{ message }}
+              </div>
+          {% endfor %}{% endif %}
+        {% endwith %}
+
+        <div class="page-header" style="text-align:left;margin-bottom:var(--space-xl);">
+            <h1 class="page-header-title">My Insights</h1>
+            <p>Track your rides, bookings, and impact.</p>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);">
+            <div class="stat-card success">
+                <div class="stat-icon"><i class="fa-solid fa-leaf"></i></div>
+                <div class="stat-info"><h4>CO2 Saved</h4><div class="stat-value">{{ stats['carbon_saved'] }} kg</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-diagram-project"></i></div>
+                <div class="stat-info"><h4>Total Activity</h4><div class="stat-value">{{ stats['total_rides'] }} rides</div></div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: My Bookings -->
+        <div style="margin-bottom:var(--space-xl);">
+            <h3 class="section-title">
+                <i class="fa-solid fa-ticket"></i> My Bookings
+                <span class="count-badge">{{ bookings|length }}</span>
+            </h3>
+            {% if bookings %}
+                {% for b in bookings %}
+                <div class="ride-card">
+                    <div style="flex:1;min-width:0;">
+                        <div class="ride-route">
+                            {{ b['leaving_from'] }}
+                            <i class="fa-solid fa-arrow-right-long" style="color:var(--color-text-muted);font-size:0.9rem;"></i>
+                            {{ b['going_to'] }}
+                        </div>
+                        <div class="ride-meta">
+                            <span><i class="fa-regular fa-calendar"></i> {{ b['date'] }}</span>
+                            <span><i class="fa-regular fa-clock"></i> {{ b['time'] }}</span>
+                            <span><i class="fa-solid fa-car"></i> {{ b['vehicle'] }}</span>
+                            <span><i class="fa-solid fa-user-astronaut"></i> @{{ b['driver_username'] }}</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <div class="price-tag">₹{{ b['price_per_seat'] }}</div>
+                        <a href="/track/{{ b['ride_id'] }}" class="btn-track">
+                            <i class="fa-solid fa-location-crosshairs"></i> Track
+                        </a>
+                        <button class="btn-danger btn-unbook"
+                            data-booking-id="{{ b['booking_id'] }}"
+                            data-from="{{ b['leaving_from'] }}"
+                            data-to="{{ b['going_to'] }}">
+                            <i class="fa-solid fa-xmark"></i> Unbook
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-section">
+                    <i class="fa-solid fa-ticket"></i>
+                    <p style="margin:0;font-weight:600;">No bookings yet</p>
+                    <p style="margin:6px 0 0;font-size:0.85rem;"><a href="/find-ride" style="color:var(--color-primary);">Find a ride →</a></p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- SECTION 2: My Published Rides -->
+        <div>
+            <h3 class="section-title">
+                <i class="fa-solid fa-map-location-dot"></i> My Published Rides
+                <span class="count-badge">{{ published|length }}</span>
+            </h3>
+            {% if published %}
+                {% for r in published %}
+                <div class="ride-card">
+                    <div style="flex:1;min-width:0;">
+                        <div class="ride-route">
+                            {{ r['leaving_from'] }}
+                            <i class="fa-solid fa-arrow-right-long" style="color:var(--color-text-muted);font-size:0.9rem;"></i>
+                            {{ r['going_to'] }}
+                        </div>
+                        <div class="ride-meta">
+                            <span><i class="fa-regular fa-calendar"></i> {{ r['date'] }}</span>
+                            <span><i class="fa-regular fa-clock"></i> {{ r['time'] }}</span>
+                            <span><i class="fa-solid fa-car"></i> {{ r['vehicle'] }}</span>
+                            <span class="seats-badge"><i class="fa-solid fa-chair"></i> {{ r['seats'] }} seats left</span>
+                            <span class="passenger-badge"><i class="fa-solid fa-users"></i> {{ r['passenger_count'] }} booked</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <div class="price-tag">₹{{ r['price_per_seat'] }}</div>
+                        <a href="/ride-passengers/{{ r['id'] }}" class="btn-passengers">
+                            <i class="fa-solid fa-users"></i> Passengers
+                        </a>
+                        <button class="btn-danger btn-cancel"
+                            data-ride-id="{{ r['id'] }}"
+                            data-from="{{ r['leaving_from'] }}"
+                            data-to="{{ r['going_to'] }}"
+                            data-count="{{ r['passenger_count'] }}">
+                            <i class="fa-solid fa-ban"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-section">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <p style="margin:0;font-weight:600;">No published rides</p>
+                    <p style="margin:6px 0 0;font-size:0.85rem;"><a href="/publish" style="color:var(--color-primary);">Publish a ride →</a></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Unbook Modal -->
+    <div class="modal-backdrop" id="unbookModal">
+        <div class="modal-box">
+            <div class="modal-icon">🎫</div>
+            <div class="modal-title">Cancel Booking?</div>
+            <div class="modal-desc" id="unbookDesc"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-keep" onclick="closeModal('unbookModal')">Keep Booking</button>
+                <button class="btn-modal-confirm" id="unbookConfirmBtn">Yes, Unbook</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Ride Modal -->
+    <div class="modal-backdrop" id="cancelModal">
+        <div class="modal-box">
+            <div class="modal-icon">⚠️</div>
+            <div class="modal-title">Cancel Your Ride?</div>
+            <div class="modal-desc" id="cancelDesc"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-keep" onclick="closeModal('cancelModal')">Keep Ride</button>
+                <button class="btn-modal-confirm" id="cancelConfirmBtn">Yes, Cancel Ride</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden forms submitted programmatically -->
+    <form id="unbookForm" method="POST" action="" style="display:none;"></form>
+    <form id="cancelForm" method="POST" action="" style="display:none;"></form>
+
+    <script>
+        // Read data from data-* attributes — zero quote issues
+        document.querySelectorAll('.btn-unbook').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var bookingId = this.getAttribute('data-booking-id');
+                var from      = this.getAttribute('data-from');
+                var to        = this.getAttribute('data-to');
+
+                document.getElementById('unbookDesc').innerHTML =
+                    'Are you sure you want to unbook <strong style="color:#fff">' + from + ' → ' + to + '</strong>?<br>The seat will be released back to the driver.';
+                document.getElementById('unbookForm').action = '/unbook/' + bookingId;
+                document.getElementById('unbookModal').classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.btn-cancel').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var rideId = this.getAttribute('data-ride-id');
+                var from   = this.getAttribute('data-from');
+                var to     = this.getAttribute('data-to');
+                var count  = parseInt(this.getAttribute('data-count'));
+
+                var note = count > 0
+                    ? '<br><span style="color:#ef4444;">' + count + ' passenger(s) will be notified by email.</span>'
+                    : '<br>No passengers have booked this ride yet.';
+
+                document.getElementById('cancelDesc').innerHTML =
+                    'Are you sure you want to cancel <strong style="color:#fff">' + from + ' → ' + to + '</strong>?' + note;
+                document.getElementById('cancelForm').action = '/cancel-ride/' + rideId;
+                document.getElementById('cancelModal').classList.add('active');
+            });
+        });
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        document.getElementById('unbookConfirmBtn').addEventListener('click', function() {
+            document.getElementById('unbookForm').submit();
+        });
+
+        document.getElementById('cancelConfirmBtn').addEventListener('click', function() {
+            document.getElementById('cancelForm').submit();
+        });
+
+        document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+            backdrop.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>

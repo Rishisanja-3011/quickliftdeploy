@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ride Passengers - QuickLift</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .passenger-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: border-color 0.2s;
+        }
+        .passenger-card:hover { border-color: rgba(0,242,254,0.3); }
+        .passenger-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(0,242,254,0.3);
+            flex-shrink: 0;
+            background: rgba(0,242,254,0.1);
+        }
+        .avatar-fallback {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0,242,254,0.12);
+            border: 2px solid rgba(0,242,254,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--color-primary);
+            flex-shrink: 0;
+        }
+        .passenger-info { flex: 1; }
+        .passenger-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .passenger-username {
+            font-size: 0.82rem;
+            color: var(--color-primary);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .passenger-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .passenger-meta span {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+        .passenger-meta span i { color: var(--color-primary); margin-right: 4px; }
+        .phone-link {
+            background: rgba(0,242,254,0.12);
+            color: var(--color-primary);
+            border: 1px solid rgba(0,242,254,0.2);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .phone-link:hover { background: rgba(0,242,254,0.22); }
+        .ride-summary {
+            background: rgba(0,242,254,0.06);
+            border: 1px solid rgba(0,242,254,0.15);
+            border-radius: 14px;
+            padding: 18px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .ride-summary-route {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ride-summary-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .ride-summary-meta span {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+        .ride-summary-meta span i { color: var(--color-primary); margin-right: 5px; }
+        .profile-link {
+            background: rgba(139,92,246,0.12);
+            color: #a78bfa;
+            border: 1px solid rgba(139,92,246,0.25);
+            border-radius: 10px;
+            padding: 7px 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .profile-link:hover { background: rgba(139,92,246,0.22); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="logo">
+                <i class="fa-solid fa-route" style="color: var(--color-primary)"></i> Quick<span>Lift</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}" class="nav-item">Dashboard</a>
+                <a href="{{ url_for('find_ride') }}" class="nav-item">Find Ride</a>
+                <a href="{{ url_for('publish') }}" class="nav-item">Publish Trip</a>
+                <a href="/insights" class="nav-item active">Insights</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline" style="padding: 6px 16px; font-size: 0.85rem; border-color: var(--color-error); color: var(--color-error);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container container" style="max-width: 700px;">
+
+        <!-- Back -->
+        <a href="/insights" style="display: inline-flex; align-items: center; gap: 8px; color: var(--color-text-secondary); font-size: 0.88rem; font-weight: 600; text-decoration: none; margin-bottom: 24px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Insights
+        </a>
+
+        <div class="page-header" style="text-align: left; margin-bottom: 24px;">
+            <h1 class="page-header-title" style="font-size: 2rem;">Passengers</h1>
+            <p>People booked on your ride.</p>
+        </div>
+
+        <!-- Ride Summary -->
+        <div class="ride-summary">
+            <div>
+                <div class="ride-summary-route">
+                    {{ ride['leaving_from'] }}
+                    <i class="fa-solid fa-arrow-right-long" style="color: var(--color-text-muted); font-size: 1rem;"></i>
+                    {{ ride['going_to'] }}
+                </div>
+                <div class="ride-summary-meta" style="margin-top: 8px;">
+                    <span><i class="fa-regular fa-calendar"></i> {{ ride['date'] }}</span>
+                    <span><i class="fa-regular fa-clock"></i> {{ ride['time'] }}</span>
+                    <span><i class="fa-solid fa-car"></i> {{ ride['vehicle'] }}</span>
+                    <span><i class="fa-solid fa-chair"></i> {{ ride['seats'] }} seats left</span>
+                </div>
+            </div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: #fff;">₹{{ ride['price_per_seat'] }}</div>
+        </div>
+
+        <!-- Passenger List -->
+        {% if passengers %}
+            <h3 style="margin: 0 0 16px; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--color-primary);">
+                <i class="fa-solid fa-users"></i> &nbsp;{{ passengers|length }} Passenger{{ 's' if passengers|length != 1 }}
+            </h3>
+
+            {% for p in passengers %}
+            <div class="passenger-card">
+                {% if p['files'] %}
+                <img src="{{ p['files'] }}"
+                     alt="{{ p['fullname'] }}"
+                     class="passenger-avatar"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="avatar-fallback" style="display:none;">
+                    {{ p['fullname'][0].upper() }}
+                </div>
+                {% else %}
+                <div class="avatar-fallback">{{ p['fullname'][0].upper() }}</div>
+                {% endif %}
+
+                <div class="passenger-info">
+                    <div class="passenger-name">{{ p['fullname'] }}</div>
+                    <div class="passenger-username">@{{ p['username'] }}</div>
+                    <div class="passenger-meta">
+                        <span><i class="fa-solid fa-city"></i> {{ p['city'] }}</span>
+                        <span><i class="fa-solid fa-venus-mars"></i> {{ p['gender'] }}</span>
+                        <span><i class="fa-regular fa-calendar"></i> Booked {{ p['booking_date'].strftime('%d %b') }}</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                    <a href="tel:{{ p['phnumber'] }}" class="phone-link">
+                        <i class="fa-solid fa-phone"></i> {{ p['phnumber'] }}
+                    </a>
+                    <a href="/profile/{{ p['username'] }}" class="profile-link">
+                        <i class="fa-solid fa-user"></i> Profile
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+
+        {% else %}
+            <div style="text-align: center; padding: 60px 20px; color: var(--color-text-muted); border: 1px dashed var(--color-glass-border); border-radius: 16px;">
+                <i class="fa-solid fa-users fa-2x" style="margin-bottom: 14px; display: block;"></i>
+                <p style="margin: 0; font-weight: 600; color: #fff;">No passengers yet</p>
+                <p style="margin: 6px 0 0; font-size: 0.85rem;">Share your ride to get bookings!</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

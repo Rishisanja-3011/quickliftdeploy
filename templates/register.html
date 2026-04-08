@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - QuickLift Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .split-left-reg {
+            background: linear-gradient(135deg, rgba(79,172,254,0.9), rgba(0,242,254,0.4)),
+                        url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop') center/cover;
+        }
+        .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:15px; }
+        @media(max-width:640px) { .form-grid { grid-template-columns:1fr;gap:0; } }
+        .upload-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px; }
+        @media(max-width:640px) { .upload-grid { grid-template-columns:1fr; } }
+        .upload-box {
+            border:2px dashed rgba(255,255,255,0.2);border-radius:12px;padding:20px 14px;
+            text-align:center;background:rgba(0,0,0,0.2);cursor:pointer;
+            transition:border-color 0.2s,background 0.2s;
+        }
+        .upload-box:hover { border-color:var(--color-primary);background:rgba(0,242,254,0.04); }
+        .upload-box.done { border-color:#22c55e;border-style:solid; }
+        .photo-circle {
+            width:72px;height:72px;border-radius:50%;object-fit:cover;
+            border:2px solid rgba(0,242,254,0.4);margin:0 auto 8px;display:none;
+        }
+        .id-thumb {
+            width:100%;max-height:64px;object-fit:cover;border-radius:8px;
+            margin-bottom:8px;display:none;border:1px solid rgba(255,255,255,0.1);
+        }
+        .upload-icon { font-size:1.8rem;margin-bottom:6px;display:block; }
+        .upload-label { font-size:0.82rem;font-weight:700;color:#fff;margin-bottom:2px; }
+        .upload-hint { font-size:0.73rem;color:var(--color-text-muted);margin:0; }
+        .done-text { font-size:0.75rem;color:#22c55e;font-weight:600;margin-top:5px;display:none; }
+    </style>
+</head>
+<body>
+    <div class="split-screen">
+        <div class="split-left split-left-reg">
+            <div class="split-left-content">
+               <h1 style="color:#0f172a;">Join QuickLift</h1>
+               <p style="color:rgba(15,23,42,0.8);font-size:1.2rem;font-weight:500;">
+                  Create your account. Every member is verified to ensure maximum security across all rides.
+               </p>
+               <div style="margin-top:40px;display:flex;gap:20px;">
+                    <i class="fa-solid fa-fingerprint" style="font-size:3rem;color:#0f172a;opacity:0.8;"></i>
+                    <i class="fa-solid fa-id-card-clip" style="font-size:3rem;color:#0f172a;opacity:0.8;"></i>
+               </div>
+            </div>
+        </div>
+
+        <div class="split-right">
+            <div class="auth-form-wrapper glass-panel" style="max-width:600px;padding:2rem;">
+                <div style="text-align:center;margin-bottom:var(--space-lg);">
+                    <h2>Create Account</h2>
+                    <p>Enter your details to register.</p>
+                </div>
+
+                {% if error %}
+                <div class="alert alert-error">
+                    <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+                </div>
+                {% endif %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-error" style="margin-bottom: 15px;">
+                          <i class="fa-solid fa-triangle-exclamation"></i> {{ message }}
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <form action="/register" method="post" enctype="multipart/form-data">
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="fullname" class="form-control" required>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contact Number</label>
+                            <input type="text" name="contact" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" name="city" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Gender</label>
+                            <select name="gender" class="form-control" required>
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Upload Section -->
+                    <div class="form-group">
+                        <label class="form-label">Upload Files</label>
+                        <div class="upload-grid">
+
+                            <!-- Profile Photo -->
+                            <div class="upload-box" id="photoBox" onclick="document.getElementById('photoInput').click()">
+                                <img id="photoPreview" class="photo-circle" alt="Preview">
+                                <i class="fa-solid fa-camera upload-icon" id="photoIcon" style="color:var(--color-primary);"></i>
+                                <div class="upload-label">Profile Photo</div>
+                                <p class="upload-hint">Your face — shown to others</p>
+                                <p class="done-text" id="photoDone"><i class="fa-solid fa-circle-check"></i> Photo selected</p>
+                                <input type="file" name="file" id="photoInput" accept="image/*" style="display:none;" required onchange="handlePhoto(this)">
+                            </div>
+
+                            <!-- ID Proof -->
+                            <div class="upload-box" id="idBox" onclick="document.getElementById('idInput').click()">
+                                <img id="idPreview" class="id-thumb" alt="ID Preview">
+                                <i class="fa-solid fa-id-card upload-icon" id="idIcon" style="color:#a78bfa;"></i>
+                                <div class="upload-label">ID / Aadhaar Proof</div>
+                                <p class="upload-hint">For safety verification only</p>
+                                <p class="done-text" id="idDone"><i class="fa-solid fa-circle-check"></i> ID selected</p>
+                                <input type="file" name="id_file" id="idInput" accept="image/*,.pdf" style="display:none;" required onchange="handleId(this)">
+                            </div>
+
+                        </div>
+                        <p style="font-size:0.72rem;color:var(--color-text-muted);margin:6px 0 0;text-align:center;">
+                            <i class="fa-solid fa-lock" style="color:var(--color-primary);"></i>
+                            Your ID is never shared with other users — used for safety verification only.
+                        </p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" name="confirm_password" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-user-plus"></i> Register
+                    </button>
+                </form>
+
+                <div style="margin-top:var(--space-lg);text-align:center;font-size:0.95rem;color:var(--color-text-secondary);">
+                    Already have an account? <a href="{{ url_for('login') }}" style="font-weight:700;">Login Here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handlePhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const p = document.getElementById('photoPreview');
+                p.src = e.target.result; p.style.display = 'block';
+                document.getElementById('photoIcon').style.display = 'none';
+                document.getElementById('photoDone').style.display = 'block';
+                document.getElementById('photoBox').classList.add('done');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+        function handleId(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const p = document.getElementById('idPreview');
+                    p.src = e.target.result; p.style.display = 'block';
+                    document.getElementById('idIcon').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // PDF
+                const icon = document.getElementById('idIcon');
+                icon.className = 'fa-solid fa-file-pdf upload-icon';
+                icon.style.color = '#ef4444';
+            }
+            document.getElementById('idDone').style.display = 'block';
+            document.getElementById('idBox').classList.add('done');
+        }
+    </script>
+</body>
+</html>

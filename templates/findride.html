@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Ride - QuickLift Pro</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="logo">
+                <i class="fa-solid fa-route" style="color: var(--color-primary)"></i> Quick<span>Lift</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('find_ride') }}" class="nav-item active">Find Ride</a>
+                <a href="{{ url_for('publish') }}" class="nav-item">Publish Trip</a>
+                <a href="/insights" class="nav-item">Insights</a>
+                <a href="/profile/{{ user['username'] }}" class="nav-item">
+    <i class="fa-solid fa-circle-user"></i> Profile
+</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline" style="padding: 6px 16px; font-size: 0.85rem; border-color: var(--color-error); color: var(--color-error);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container container">
+        <div class="page-header" style="text-align: left; margin-bottom: var(--space-xl);">
+            <h1 class="page-header-title">Find a Ride</h1>
+            <p>Search for verified rides to your destination.</p>
+        </div>
+
+        <div class="glass-panel" style="margin-bottom: var(--space-xl); padding: var(--space-md);">
+            <form action="/find-ride" method="POST" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label class="form-label" style="font-size: 0.75rem;">Leaving From</label>
+                    <input type="text" name="from" class="form-control" placeholder="E.g. Pune">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label class="form-label" style="font-size: 0.75rem;">Going To</label>
+                    <input type="text" name="to" class="form-control" placeholder="E.g. Mumbai">
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" style="padding: 14px 24px;">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-error">
+                  <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="feed-section">
+            {% if rides %}
+                {% for ride in rides %}
+                <div class="feed-item" style="padding: 24px;">
+                    <div class="route-info">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                            <i class="far fa-clock" style="color: var(--color-primary); margin-right: 8px;"></i> {{ ride['time'] }}
+                        </div>
+                        <div style="font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            {{ ride['leaving_from'] }} 
+                            <i class="fa-solid fa-arrow-right-long" style="color: var(--color-text-muted);"></i>
+                            {{ ride['going_to'] }}
+                        </div>
+                        <div class="route-meta">
+                            <span><i class="fa-solid fa-user-astronaut"></i> Driver: {{ ride['username'] }}</span>
+                            <span class="badge badge-info">{{ ride['seats'] }} capacity left</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 12px;">
+                        <div style="font-size: 0.8rem; color: var(--color-text-secondary); font-weight: 600; text-transform: uppercase;">Verified Rate</div>
+                        <div style="font-size: 2rem; font-weight: 900; color: #fff; line-height: 1;">₹{{ ride['price_per_seat'] }}</div>
+                        <a href="{{ url_for('reserve_page', ride_id=ride['id']) }}" class="btn btn-primary">Reserve Seat</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <img src="https://cdni.iconscout.com/illustration/premium/thumb/no-data-found-illustration-download-in-svg-png-gif-file-formats--missing-error-empty-state-pack-user-interface-illustrations-5218663.png" alt="No Rides" style="max-width: 200px; opacity: 0.5; margin-bottom: 20px;">
+                    <h3 style="color: #fff;">No Rides Found</h3>
+                    <p>There are no active rides available for this search.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

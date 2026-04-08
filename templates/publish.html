@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publish Trip - QuickLift Pro</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .autocomplete { position: relative; }
+        .suggestions {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--color-bg-base); border: 1px solid var(--color-glass-border);
+            border-radius: var(--radius-sm); max-height: 180px; overflow-y: auto;
+            display: none; z-index: 999;
+        }
+        .sugg-item { padding: 10px; cursor: pointer; font-size: 0.9rem; color: #fff; }
+        .sugg-item:hover { background: var(--color-bg-surface-hover); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="logo">
+                <i class="fa-solid fa-route" style="color: var(--color-primary)"></i> Quick<span>Lift</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('find_ride') }}" class="nav-item">Find Ride</a>
+                <a href="{{ url_for('publish') }}" class="nav-item active">Publish Trip</a>
+                <a href="/insights" class="nav-item">Insights</a>
+                <a href="/profile/{{ user['username'] }}" class="nav-item">
+    <i class="fa-solid fa-circle-user"></i> Profile
+</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline" style="padding: 6px 16px; font-size: 0.85rem; border-color: var(--color-error); color: var(--color-error);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container container">
+        <div class="page-header" style="text-align: left; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-xl);">
+            <div>
+                <h1 class="page-header-title">Publish a Ride</h1>
+                <p>Share your journey and split costs.</p>
+            </div>
+            <div class="badge badge-success"><i class="fa-solid fa-shield-check"></i> ID Verified Driver</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                 <div class="stat-info">
+                    <h4>Total Trip Value</h4>
+                    <div class="stat-value">₹ {{ total_price if total_price else '0.00' }}</div>
+                 </div>
+            </div>
+            <div class="stat-card">
+                 <div class="stat-info">
+                    <h4>Est. Distance</h4>
+                    <div class="stat-value">{{ calculated_km if calculated_km else '0.0' }} KM</div>
+                 </div>
+            </div>
+            <div class="stat-card success">
+                 <div class="stat-info">
+                    <h4>Price per Seat</h4>
+                    <div class="stat-value">₹ {{ price_per_seat if price_per_seat else '0.00' }} <span style="font-size:0.8rem; font-weight:normal;">/ Seat</span></div>
+                 </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: var(--space-xl); flex-wrap: wrap;">
+            <div class="glass-panel" style="flex: 2; min-width: 300px;">
+                <form id="rideForm" action="/publish" method="POST">
+                    <input type="hidden" name="start_lat" id="start_lat">
+                    <input type="hidden" name="start_lon" id="start_lon">
+                    <input type="hidden" name="dest_lat" id="dest_lat">
+                    <input type="hidden" name="dest_lon" id="dest_lon">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">Leaving From</label>
+                            <div class="autocomplete">
+                                 <input type="text" name="leaving_from" id="from_city" class="form-control" placeholder="E.g. Surat" required>
+                                 <div id="from-results" class="suggestions"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Going To</label>
+                            <div class="autocomplete">
+                                <input type="text" name="going_to" id="to_city" class="form-control" placeholder="E.g. Mumbai" required>
+                                <div id="to-results" class="suggestions"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">Departure Date</label>
+                            <input type="date" name="date" id="ride_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Departure Time</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">Vehicle</label>
+                            <select name="vehicle" class="form-control">
+                                <option>Sedan / Honda City</option>
+                                <option>SUV / Toyota Fortuner</option>
+                                <option>Hatchback / Swift</option>
+                                <option>Electric / Tesla Model 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Seating Capacity</label>
+                            <select name="seats" class="form-control">
+                                <option value="1">1 Passenger</option>
+                                <option value="2">2 Passengers</option>
+                                <option value="3">3 Passengers</option>
+                                <option value="4">4 Passengers</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" id="submitBtn" style="margin-top: 20px;">
+                        <i class="fa-solid fa-car"></i> Publish Ride
+                    </button>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                       {% if messages %}
+                          {% for category, message in messages %}
+                             <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}" style="margin-top:20px;">{{ message }}</div>
+                          {% endfor %}
+                       {% endif %}
+                    {% endwith %}
+                </form>
+            </div>
+
+            <div style="flex: 1; min-width: 250px;">
+                <div class="glass-panel">
+                    <h4 style="color: #fff; margin-bottom: 15px; font-size: 1.1rem;"><i class="fa-solid fa-circle-info" style="color: var(--color-primary)"></i> Posting Guidelines</h4>
+                    <ul style="padding-left:20px; color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 20px;">
+                        <li style="margin-bottom: 8px;">Ensure city names are accurate.</li>
+                        <li style="margin-bottom: 8px;">Distance sync uses the OSRM Driving algorithm.</li>
+                        <li style="margin-bottom: 8px;">Base rate calculated at ₹40 + ₹12/km.</li>
+                        <li>Confirmed rides are posted automatically.</li>
+                    </ul>
+                    <div style="padding: 15px; background: rgba(0,242,254,0.1); border: 1px solid rgba(0,242,254,0.2); border-radius: 12px; font-size: 0.85rem; color: #fff;">
+                        <strong>Note:</strong> Once published, your ride will appear on the Find Ride page.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts from original publish file -->
+    <script>
+        // Set min and max dates for the date picker (Today to Today + 15 days)
+        const dateInput = document.getElementById('ride_date');
+        if (dateInput) {
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 15);
+            
+            const formatDate = (date) => {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            };
+            
+            dateInput.min = formatDate(today);
+            dateInput.max = formatDate(maxDate);
+        }
+
+        document.getElementById('rideForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Calculating Route...";
+            submitBtn.disabled = true;
+            
+            const fromCity = document.getElementById('from_city').value;
+            const toCity = document.getElementById('to_city').value;
+
+            async function getCoords(city) {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${city}`);
+                    const data = await res.json();
+                    return data.length > 0 ? { lat: data[0].lat, lon: data[0].lon } : null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            const start = await getCoords(fromCity);
+            const dest = await getCoords(toCity);
+
+            if (start && dest) {
+                document.getElementById('start_lat').value = start.lat;
+                document.getElementById('start_lon').value = start.lon;
+                document.getElementById('dest_lat').value = dest.lat;
+                document.getElementById('dest_lon').value = dest.lon;
+                this.submit();
+            } else {
+                alert("City lookup failed. Please verify city names.");
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        function initCityAutocomplete(inputId, resultsId) {
+            const input = document.getElementById(inputId);
+            const resBox = document.getElementById(resultsId);
+
+            input.addEventListener('input', async () => {
+                const val = input.value.trim();
+                if (val.length < 3) { resBox.style.display = 'none'; return; }
+                const url = `https://photon.komoot.io/api/?q=${val}&limit=6&bbox=68.1,7.9,97.4,35.5`;
+                try {
+                    const resp = await fetch(url);
+                    const data = await resp.json();
+                    resBox.innerHTML = '';
+                    resBox.style.display = 'none';
+                    data.features.forEach(f => {
+                        const p = f.properties;
+                        const name = p.name || p.city || p.state || p.country;
+                        if (!name) return;
+                        const div = document.createElement('div');
+                        div.className = 'sugg-item';
+                        div.innerText = name;
+                        div.onclick = () => { input.value = name; resBox.style.display = 'none'; };
+                        resBox.appendChild(div);
+                        resBox.style.display = 'block';
+                    });
+                } catch(e) {}
+            });
+        }
+
+        initCityAutocomplete('from_city', 'from-results');
+        initCityAutocomplete('to_city', 'to-results');
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.autocomplete')) {
+                document.querySelectorAll('.suggestions').forEach(s => s.style.display = 'none');
+            }
+        });
+    </script>
+</body>
+</html>

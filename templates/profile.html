@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile['fullname'] }} - QuickLift</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .profile-hero {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 20px;
+            padding: 36px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .profile-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(0,242,254,0.4);
+            flex-shrink: 0;
+        }
+        .profile-photo-fallback {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(0,242,254,0.12);
+            border: 3px solid rgba(0,242,254,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--color-primary);
+            flex-shrink: 0;
+        }
+        .profile-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .profile-username {
+            font-size: 1rem;
+            color: var(--color-primary);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .profile-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .profile-tag {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .profile-tag i { color: var(--color-primary); }
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .mini-stat {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+        .mini-stat-value {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .mini-stat-label {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,242,254,0.12);
+            color: var(--color-primary);
+            border: 1px solid rgba(0,242,254,0.25);
+            border-radius: 12px;
+            padding: 12px 22px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .contact-btn:hover { background: rgba(0,242,254,0.22); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="logo">
+                <i class="fa-solid fa-route" style="color: var(--color-primary)"></i> Quick<span>Lift</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}" class="nav-item">Dashboard</a>
+                <a href="{{ url_for('find_ride') }}" class="nav-item">Find Ride</a>
+                <a href="{{ url_for('publish') }}" class="nav-item">Publish Trip</a>
+                <a href="/insights" class="nav-item">Insights</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline" style="padding: 6px 16px; font-size: 0.85rem; border-color: var(--color-error); color: var(--color-error);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container container" style="max-width: 650px;">
+
+        <a href="javascript:history.back()" style="display: inline-flex; align-items: center; gap: 8px; color: var(--color-text-secondary); font-size: 0.88rem; font-weight: 600; text-decoration: none; margin-bottom: 24px;">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </a>
+
+        <!-- Profile Hero -->
+        <div class="profile-hero">
+            {% if profile['files'] %}
+            <img src="{{ profile['files'] }}"
+                 alt="{{ profile['fullname'] }}"
+                 class="profile-photo"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="profile-photo-fallback" style="display:none;">{{ profile['fullname'][0].upper() }}</div>
+            {% else %}
+            <div class="profile-photo-fallback">{{ profile['fullname'][0].upper() }}</div>
+            {% endif %}
+
+            <div style="flex: 1;">
+                <div class="profile-name">{{ profile['fullname'] }}</div>
+                <div class="profile-username">@{{ profile['username'] }}</div>
+                <div class="profile-tags">
+                    <span class="profile-tag"><i class="fa-solid fa-city"></i> {{ profile['city'] }}</span>
+                    <span class="profile-tag"><i class="fa-solid fa-venus-mars"></i> {{ profile['gender'] }}</span>
+                    <span class="profile-tag"><i class="fa-solid fa-leaf"></i> {{ stats['co2_saved'] }} kg CO2 saved</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stat-row">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats['rides_published'] }}</div>
+                <div class="mini-stat-label">Rides Published</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats['rides_taken'] }}</div>
+                <div class="mini-stat-label">Rides Taken</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ stats['co2_saved'] }} kg</div>
+                <div class="mini-stat-label">CO2 Saved</div>
+            </div>
+        </div>
+
+        <!-- Contact -->
+        {% if profile['username'] != current_user %}
+        <div class="glass-panel" style="padding: 24px; text-align: center;">
+            <p style="color: var(--color-text-secondary); margin: 0 0 16px; font-size: 0.9rem;">Want to get in touch?</p>
+            <a href="tel:{{ profile['phnumber'] }}" class="contact-btn">
+                <i class="fa-solid fa-phone"></i> Call {{ profile['fullname'].split()[0] }}
+            </a>
+        </div>
+        {% else %}
+        <div class="glass-panel" style="padding: 24px; text-align: center; color: var(--color-text-muted);">
+            <i class="fa-solid fa-user-check" style="font-size: 1.5rem; margin-bottom: 10px; display: block; color: var(--color-primary);"></i>
+            This is your profile.
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
