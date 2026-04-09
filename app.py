@@ -37,7 +37,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_if_env_fails')
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST", "localhost"),
     "user":     os.getenv("DB_USER", "root"),
-    "port":     int(os.getenv("DB_PORT",    3306)),
+    "port":     int(os.getenv("DB_PORT",3306)),
     "password": os.getenv("DB_PASS", ""),
     "database": os.getenv("DB_NAME", "defaultdb")
 }
