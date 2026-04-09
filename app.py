@@ -119,7 +119,7 @@ def send_async_email(app, msg):
 
 def send_otp_email(email, otp):
     msg = Message("QuickLift OTP Verification",
-                  sender=app.config['MAIL_USERNAME'], recipients=[email])
+                  sender="sanjarishi99@gmail.com", recipients=[email])
     msg.body = f"<-----------QuickLift---------->\n Your OTP for QuickLift verification is: {otp}"
     # Send instantly without freezing the website
     thread = Thread(target=send_async_email, args=(app, msg))
@@ -542,7 +542,7 @@ def cancel_ride(ride_id):
         for passenger in passengers:
             try:
                 msg = Message(subject="⚠️ QuickLift — Your ride has been cancelled",
-                              sender=app.config['MAIL_USERNAME'], recipients=[passenger['email']])
+                              sender="sanjarishi99@gmail.com", recipients=[passenger['email']])
                 msg.body = f"<----------- QuickLift ----------->\n\nHi {passenger['fullname']},\n\nYour upcoming ride has been cancelled by the driver.\n\nCANCELLED RIDE:\n  From  : {ride['leaving_from']}\n  To    : {ride['going_to']}\n  Date  : {ride['date']} at {ride['time']}\n  Driver: @{ride['username']}\n\nPlease find another ride:\n  http://127.0.0.1:5000/find-ride\n\n— QuickLift Team"
                 # Using the background thread here too!
                 Thread(target=send_async_email, args=(app, msg)).start()
@@ -664,7 +664,7 @@ def send_ride_notifications():
             for passenger in passengers:
                 try:
                     msg = Message(subject="🚗 QuickLift — Your ride departs in 5 minutes!",
-                                  sender=app.config['MAIL_USERNAME'], recipients=[passenger['email']])
+                                  sender="sanjarishi99@gmail.com", recipients=[passenger['email']])
                     msg.body = f"<----------- QuickLift ----------->\n\nHi {passenger['fullname']},\n\nYour ride departs in ~5 minutes!\n\nFrom: {ride['leaving_from']}\nTo  : {ride['going_to']}\nDriver: {ride['fullname']} (@{ride['username']})\nPhone : {ride['phnumber']}\n\n{location_text}\n\nTrack live: http://127.0.0.1:5000/track/{ride['id']}\n\nSafe travels!\n— QuickLift Team"
                     with app.app_context(): mail.send(msg)
                 except Exception as e:
