@@ -1,5 +1,4 @@
 from flask import Flask, request, redirect, render_template, url_for, session, flash, g, jsonify
-from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import RequestEntityTooLarge
 from dotenv import load_dotenv
@@ -10,7 +9,7 @@ import mysql.connector
 from datetime import datetime, date as dt_date, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
-from threading import Thread  # <-- ADDED FOR BACKGROUND EMAILS
+from threading import Thread  # Background Threads
 
 # Cloudinary imports
 import cloudinary
@@ -27,19 +26,11 @@ load_dotenv()
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 
-# <-- ERROR HANDLER MOVED HERE TO ACTUALLY WORK
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_size_error(e):
     flash("One of your files is too large! Please ensure photos are under 10MB.", "error")
     return redirect(request.url)
 
-# ── Secure Email config ──────────────────────────────────────────────
-app.config['MAIL_SERVER']   = os.getenv('MAIL_SERVER','smtp.gmail.com')
-app.config['MAIL_PORT']     = 2525
-app.config['MAIL_USE_TLS']  = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-mail = Mail(app)
 app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_if_env_fails')
 
 # ── Secure DB config ─────────────────────────────────────────────────
@@ -108,21 +99,30 @@ def get_road_distance(lat1, lon1, lat2, lon2):
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-# <-- NEW BACKGROUND THREADING EMAIL LOGIC
-def send_async_email(app, msg):
-    with app.app_context():
-        try:
-            mail.send(msg)
-            print("Background email sent successfully!")
-        except Exception as e:
-            print(f"Background email failed: {e}")
+# ── BREVO HTTP API (FIREWALL PROOF) ───────────────────────────
+def send_async_api_email(subject, to_email, text_body):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": os.getenv("BREVO_API_KEY"),
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {"email": "sanjarishi99@gmail.com", "name": "QuickLift Team"},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": text_body
+    }
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        print(f"Brevo API Status: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Brevo API Crash: {e}")
 
 def send_otp_email(email, otp):
-    msg = Message("QuickLift OTP Verification",
-                  sender="sanjarishi99@gmail.com", recipients=[email])
-    msg.body = f"<-----------QuickLift---------->\n Your OTP for QuickLift verification is: {otp}"
-    # Send instantly without freezing the website
-    thread = Thread(target=send_async_email, args=(app, msg))
+    subject = "QuickLift OTP Verification"
+    body = f"<-----------QuickLift---------->\n Your OTP for QuickLift verification is: {otp}"
+    thread = Thread(target=send_async_api_email, args=(subject, email, body))
     thread.start()
 
 # ─────────────────────────────────────────────────────────────
@@ -207,7 +207,6 @@ def register():
             return render_template("register.html", error="Username or email already exists")
 
         try:
-            # Upload to Cloudinary instead of local folder
             profile_upload = cloudinary.uploader.upload(file, folder="quicklift/profiles")
             profile_url = profile_upload.get('secure_url')
 
@@ -226,8 +225,8 @@ def register():
             "contact":      contact,
             "city":         city,
             "gender":       gender,
-            "file_path":    profile_url, # Now saving Cloudinary URL
-            "id_file_path": id_url,      # Now saving Cloudinary URL
+            "file_path":    profile_url,
+            "id_file_path": id_url,
             "password":     hashed_password
         }
         otp = generate_otp()
@@ -541,11 +540,9 @@ def cancel_ride(ride_id):
         db.commit()
         for passenger in passengers:
             try:
-                msg = Message(subject="⚠️ QuickLift — Your ride has been cancelled",
-                              sender="sanjarishi99@gmail.com", recipients=[passenger['email']])
-                msg.body = f"<----------- QuickLift ----------->\n\nHi {passenger['fullname']},\n\nYour upcoming ride has been cancelled by the driver.\n\nCANCELLED RIDE:\n  From  : {ride['leaving_from']}\n  To    : {ride['going_to']}\n  Date  : {ride['date']} at {ride['time']}\n  Driver: @{ride['username']}\n\nPlease find another ride:\n  http://127.0.0.1:5000/find-ride\n\n— QuickLift Team"
-                # Using the background thread here too!
-                Thread(target=send_async_email, args=(app, msg)).start()
+                subject = "⚠️ QuickLift — Your ride has been cancelled"
+                body = f"<----------- QuickLift ----------->\n\nHi {passenger['fullname']},\n\nYour upcoming ride has been cancelled by the driver.\n\nCANCELLED RIDE:\n  From  : {ride['leaving_from']}\n  To    : {ride['going_to']}\n  Date  : {ride['date']} at {ride['time']}\n  Driver: @{ride['username']}\n\nPlease find another ride:\n  http://127.0.0.1:5000/find-ride\n\n— QuickLift Team"
+                Thread(target=send_async_api_email, args=(subject, passenger['email'], body)).start()
             except Exception as e:
                 print(f"Email error for {passenger['email']}: {e}")
         flash(f"Ride cancelled. {len(passengers)} passenger(s) notified by email.", "success")
@@ -612,7 +609,6 @@ def edit_profile():
             return redirect(f'/profile/{user_name}')
     try:
         if photo and photo.filename:
-            # Upload new photo to Cloudinary
             profile_upload = cloudinary.uploader.upload(photo, folder="quicklift/profiles")
             file_path = profile_upload.get('secure_url')
             
@@ -663,10 +659,9 @@ def send_ride_notifications():
             )
             for passenger in passengers:
                 try:
-                    msg = Message(subject="🚗 QuickLift — Your ride departs in 5 minutes!",
-                                  sender="sanjarishi99@gmail.com", recipients=[passenger['email']])
-                    msg.body = f"<----------- QuickLift ----------->\n\nHi {passenger['fullname']},\n\nYour ride departs in ~5 minutes!\n\nFrom: {ride['leaving_from']}\nTo  : {ride['going_to']}\nDriver: {ride['fullname']} (@{ride['username']})\nPhone : {ride['phnumber']}\n\n{location_text}\n\nTrack live: http://127.0.0.1:5000/track/{ride['id']}\n\nSafe travels!\n— QuickLift Team"
-                    with app.app_context(): mail.send(msg)
+                    subject = "🚗 QuickLift — Your ride departs in 5 minutes!"
+                    body = f"<----------- QuickLift ----------->\n\nHi {passenger['fullname']},\n\nYour ride departs in ~5 minutes!\n\nFrom: {ride['leaving_from']}\nTo  : {ride['going_to']}\nDriver: {ride['fullname']} (@{ride['username']})\nPhone : {ride['phnumber']}\n\n{location_text}\n\nTrack live: http://127.0.0.1:5000/track/{ride['id']}\n\nSafe travels!\n— QuickLift Team"
+                    Thread(target=send_async_api_email, args=(subject, passenger['email'], body)).start()
                 except Exception as e:
                     print(f"Email error for {passenger['email']}: {e}")
         notif_cursor.close(); notif_db.close()
